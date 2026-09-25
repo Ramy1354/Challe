@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>شاليه - Challé | نظام إدارة الحجوزات</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#059669">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Challé">
+
+  <!-- Tailwind CSS & Cairo Font -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    input, textarea, select {
+      user-select: text;
+      font-size: 16px !important; /* Prevents auto-zoom on iOS */
+    }
+    @media print {
+      body * { visibility: hidden; }
+      #printableReceipt, #printableReceipt * { visibility: visible; }
+      #printableReceipt { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen pb-24 md:pb-10 antialiased selection:bg-emerald-200">
+
+  <!-- ================= AUTH VIEW ================= -->
+  <div id="authView" class="fixed inset-0 z-50 bg-gradient-to-br from-emerald-950 via-slate-900 to-teal-950 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-7 md:p-10 w-full max-w-md shadow-2xl border border-emerald-100 text-center">
+      <div class="w-20 h-20 bg-emerald-600 text-white rounded-3xl mx-auto flex items-center justify-center shadow-lg shadow-emerald-600/30 mb-5">
+        <i data-lucide="palmtree" class="w-10 h-10"></i>
+      </div>
+      <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">شاليه • Challé</h1>
+      <p class="text-slate-500 text-base mt-1 font-semibold">برنامج الحجوزات الخاص</p>
+
+      <form id="loginForm" class="mt-8 space-y-5 text-right">
+        <div>
+          <label class="block text-slate-700 font-bold mb-2 text-base">اسم المستخدم</label>
+          <div class="relative">
+            <input type="text" id="loginUser" required class="w-full px-4 py-4 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-emerald-600 focus:bg-white outline-none font-bold text-slate-800 text-lg transition pr-12">
+            <i data-lucide="user" class="w-6 h-6 absolute right-4 top-4 text-slate-400"></i>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-700 font-bold mb-2 text-base">الرقم السري</label>
+          <div class="relative">
+            <input type="password" id="loginPass" required class="w-full px-4 py-4 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-emerald-600 focus:bg-white outline-none font-bold text-slate-800 text-lg transition pr-12">
+            <i data-lucide="lock" class="w-6 h-6 absolute right-4 top-4 text-slate-400"></i>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 bg-emerald-50/70 p-3 rounded-xl border border-emerald-200">
+          <input type="checkbox" id="rememberMe" checked class="w-6 h-6 accent-emerald-600 rounded cursor-pointer">
+          <label for="rememberMe" class="font-bold text-emerald-900 text-sm cursor-pointer select-none">
+            تذكرني دائماً (دخول تلقائي)
+          </label>
+        </div>
+
+        <div id="loginError" class="text-rose-600 text-sm font-bold hidden bg-rose-50 p-3 rounded-xl border border-rose-200 text-center">
+          اسم المستخدم أو الرقم السري غير صحيح
+        </div>
+
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-black text-xl py-4 rounded-2xl shadow-xl shadow-emerald-600/30 transition flex items-center justify-center gap-2">
+          <span>دخول البرنامج</span>
+          <i data-lucide="arrow-left" class="w-6 h-6"></i>
+        </button>
+
+        <button type="button" onclick="quickFillAdmin()" class="w-full py-2.5 text-sm font-bold text-slate-500 hover:text-emerald-700 transition">
+          تجربة الدخول بضغطة واحدة (admin / 123456)
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MAIN APP VIEW ================= -->
+  <div id="appView" class="hidden">
+    <!-- Header -->
+    <header class="bg-emerald-800 text-white sticky top-0 z-40 shadow-lg shadow-emerald-950/10">
+      <div class="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
+            <i data-lucide="palmtree" class="w-6 h-6 text-emerald-200"></i>
+          </div>
+          <div>
+            <h1 class="text-xl md:text-2xl font-black tracking-tight leading-none">Challé • شاليه</h1>
+            <p class="text-emerald-200 text-xs font-semibold mt-1">حجوزاتي وإدارتي</p>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="flex items-center gap-2">
+          <button onclick="triggerEmailBackup()" class="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-600 text-emerald-50 px-3.5 py-2 rounded-xl text-sm font-bold shadow-sm transition border border-emerald-600" title="إرسال نسخة احتياطية للإيميل">
+            <i data-lucide="mail-check" class="w-5 h-5 text-emerald-200"></i>
+            <span class="hidden md:inline">نسخة احتياطية للإيميل</span>
+          </button>
+
+          <button onclick="logoutAdmin()" class="p-2.5 bg-emerald-900/60 hover:bg-rose-600 rounded-xl text-emerald-200 hover:text-white transition" title="تسجيل الخروج">
+            <i data-lucide="log-out" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content Wrapper -->
+    <main class="max-w-6xl mx-auto px-4 py-6">
+
+      <!-- Alerts Section (Countdown for check-ins within 48h) -->
+      <div id="urgentAlertsBox" class="mb-6 hidden"></div>
+
+      <!-- Quick Stats Card Bar -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+          <p class="text-xs md:text-sm font-bold text-slate-500 flex items-center gap-1.5 mb-1">
+            <i data-lucide="calendar" class="w-4 h-4 text-emerald-600"></i> الحجوزات النشطة
+          </p>
+          <p id="statActiveCount" class="text-2xl md:text-3xl font-black text-slate-900">0</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+          <p class="text-xs md:text-sm font-bold text-slate-500 flex items-center gap-1.5 mb-1">
+            <i data-lucide="clock" class="w-4 h-4 text-amber-600"></i> قادمون قريباً
+          </p>
+          <p id="statUpcomingCount" class="text-2xl md:text-3xl font-black text-amber-600">0</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+          <p class="text-xs md:text-sm font-bold text-slate-500 flex items-center gap-1.5 mb-1">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-teal-600"></i> العربين المحصلة
+          </p>
+          <p id="statDepositsTotal" class="text-xl md:text-2xl font-black text-teal-700">0</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+          <p class="text-xs md:text-sm font-bold text-slate-500 flex items-center gap-1.5 mb-1">
+            <i data-lucide="wallet" class="w-4 h-4 text-rose-600"></i> المتبقي تحصيله
+          </p>
+          <p id="statRemainingTotal" class="text-xl md:text-2xl font-black text-rose-600">0</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="flex items-center justify-between border-b border-slate-300 pb-3 mb-6">
+        <div class="flex gap-2">
+          <button onclick="switchTab('bookings')" id="tabBtn-bookings" class="px-5 py-2.5 rounded-2xl font-extrabold text-base md:text-lg transition bg-emerald-700 text-white shadow-md">
+            الحجوزات والجدول
+          </button>
+          <button onclick="switchTab('properties')" id="tabBtn-properties" class="px-5 py-2.5 rounded-2xl font-bold text-base md:text-lg text-slate-600 hover:text-slate-900 transition">
+            الشاليهات والمنشآت
+          </button>
+          <button onclick="switchTab('settings')" id="tabBtn-settings" class="px-5 py-2.5 rounded-2xl font-bold text-base md:text-lg text-slate-600 hover:text-slate-900 transition">
+            الإعدادات والنسخ
+          </button>
+        </div>
+
+        <!-- Big "+ Add Booking" Button -->
+        <button onclick="openBookingModal()" class="hidden md:flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-6 py-3 rounded-2xl shadow-lg shadow-emerald-700/20 active:scale-95 transition text-base">
+          <i data-lucide="plus-circle" class="w-5 h-5"></i>
+          <span>حجز جديد</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: BOOKINGS LIST -->
+      <section id="tabContent-bookings" class="space-y-4">
+        <!-- Search & Filter Bar -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row gap-3 items-center justify-between shadow-sm">
+          <div class="relative w-full md:w-80">
+            <input type="text" id="searchInput" oninput="renderBookings()" placeholder="ابحث باسم العميل أو رقم الموبايل..." class="w-full pr-11 pl-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-emerald-600 outline-none font-bold text-slate-800">
+            <i data-lucide="search" class="w-5 h-5 absolute right-4 top-3.5 text-slate-400"></i>
+          </div>
+
+          <div class="flex gap-2 w-full md:w-auto">
+            <select id="filterProperty" onchange="renderBookings()" class="w-1/2 md:w-auto px-3 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-700 text-sm">
+              <option value="ALL">جميع المنشآت</option>
+            </select>
+            <select id="filterStatus" onchange="renderBookings()" class="w-1/2 md:w-auto px-3 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-700 text-sm">
+              <option value="ALL">كل الحالات</option>
+              <option value="UPCOMING">قادم</option>
+              <option value="ACTIVE">حالياً بالمنشأة</option>
+              <option value="COMPLETED">مكتمل</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Bookings Cards Container -->
+        <div id="bookingsList" class="space-y-4">
+          <!-- Populated by JavaScript -->
+        </div>
+      </section>
+
+      <!-- TAB 2: PROPERTIES CONFIGURATION -->
+      <section id="tabContent-properties" class="hidden space-y-4">
+        <div class="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200">
+          <div>
+            <h2 class="text-xl font-black text-slate-800">منشآتي (شاليهات، شقق، فيلات)</h2>
+            <p class="text-sm text-slate-500 font-medium">أضف أو عدّل المنشآت التي تقوم بتأجيرها</p>
+          </div>
+          <button onclick="openPropertyModal()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-4 py-2.5 rounded-xl shadow transition text-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>إضافة منشأة</span>
+          </button>
+        </div>
+
+        <div id="propertiesGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Rendered by JavaScript -->
+        </div>
+      </section>
+
+      <!-- TAB 3: SETTINGS & BACKUP -->
+      <section id="tabContent-settings" class="hidden space-y-6">
+        <!-- Currency & Email Backup Config Card -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+          <div class="flex items-center gap-3 pb-4 border-b border-slate-100">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+              <i data-lucide="settings" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-xl font-black text-slate-800">إعدادات النظام والعملة</h3>
+              <p class="text-sm text-slate-500 font-semibold">تخصيص العملة وعنوان النسخ الاحتياطي</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-base font-bold text-slate-800 mb-2">نوع العملة الحالية</label>
+              <select id="currencySelector" onchange="updateCurrencySetting(this.value)" class="w-full px-4 py-3.5 rounded-xl bg-slate-50 border-2 border-slate-200 font-extrabold text-slate-800 focus:border-emerald-600 outline-none text-base">
+                <option value="EGP">جنيه مصري (EGP - ج.م)</option>
+                <option value="SAR">ريال سعودي (SAR - ر.س)</option>
+                <option value="AED">درهم إماراتي (AED - د.إ)</option>
+                <option value="KWD">دينار كويتي (KWD - د.ك)</option>
+                <option value="QAR">ريال قطري (QAR - ر.ق)</option>
+                <option value="BHD">دينار بحريني (BHD - د.ب)</option>
+                <option value="OMR">ريال عماني (OMR - ر.ع)</option>
+                <option value="JOD">دينار أردني (JOD - د.أ)</option>
+                <option value="USD">دولار أمريكي (USD - $)</option>
+                <option value="EUR">يورو (EUR - €)</option>
+                <option value="GBP">جنيه استرليني (GBP - £)</option>
+                <option value="TRY">ليرة تركية (TRY - ₺)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-base font-bold text-slate-800 mb-2">البريد الإلكتروني للنسخ الاحتياطي</label>
+              <div class="flex gap-2">
+                <input type="email" id="backupEmailInput" placeholder="father@example.com" class="w-full px-4 py-3.5 rounded-xl bg-slate-50 border-2 border-slate-200 font-bold text-slate-800 focus:border-emerald-600 outline-none text-base">
+                <button onclick="saveBackupEmail()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-5 rounded-xl transition">
+                  حفظ
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Instant Backup Center -->
+          <div class="bg-emerald-50 rounded-2xl p-5 border border-emerald-200 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                <i data-lucide="shield-check" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <h4 class="font-black text-emerald-950 text-lg">النسخ الاحتياطي للأمان</h4>
+                <p class="text-sm font-semibold text-emerald-800">أرسل جميع حجوزاتك وبياناتك إلى إيميلك بضغطة واحدة، أو نزل ملف البيانات على جهازك.</p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2 w-full md:w-auto">
+              <button onclick="triggerEmailBackup()" class="w-full md:w-auto bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold px-5 py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                <i data-lucide="send" class="w-5 h-5"></i>
+                <span>إرسال تقرير للإيميل</span>
+              </button>
+              <button onclick="exportDatabaseJSON()" class="w-full md:w-auto bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 font-bold px-4 py-3 rounded-xl transition flex items-center justify-center gap-2">
+                <i data-lucide="download" class="w-5 h-5 text-slate-600"></i>
+                <span>تنزيل ملف النسخة</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Restore Backup Option -->
+          <div class="border-t border-slate-200 pt-4 flex items-center justify-between">
+            <div>
+              <p class="font-bold text-slate-700">استعادة نسخة احتياطية سابقة</p>
+              <p class="text-xs text-slate-500 font-medium">لو قمت بتغيير هاتفك، ارفع ملف النسخة الاحتياطية هنا</p>
+            </div>
+            <label class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-4 py-2 rounded-xl border border-slate-300 transition text-sm">
+              <span>اختيار ملف واستعادة</span>
+              <input type="file" id="restoreFileInput" accept=".json" onchange="restoreDatabase(event)" class="hidden">
+            </label>
+          </div>
+        </div>
+
+        <!-- Change Credentials Card -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+          <h3 class="text-xl font-black text-slate-800 pb-2 border-b border-slate-100">تغيير اسم المستخدم أو الرقم السري</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-1">اسم المستخدم الجديد</label>
+              <input type="text" id="newUsername" placeholder="مثال: admin" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-1">الرقم السري الجديد</label>
+              <input type="password" id="newPassword" placeholder="اكتب رقماً سرياً قوياً" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800">
+            </div>
+          </div>
+          <button onclick="saveAdminCredentials()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl transition">
+            حفظ البيانات الجديدة
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- MOBILE BOTTOM NAVIGATION DOCK -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 py-2 z-40 flex items-center justify-around shadow-2xl">
+      <button onclick="switchTab('bookings')" id="mTab-bookings" class="flex flex-col items-center py-1 text-emerald-700 font-black">
+        <i data-lucide="calendar" class="w-6 h-6"></i>
+        <span class="text-xs mt-1">الحجوزات</span>
+      </button>
+
+      <!-- Center Floating Plus Button -->
+      <button onclick="openBookingModal()" class="w-14 h-14 -mt-7 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-emerald-700/40 active:scale-95 transition">
+        <i data-lucide="plus" class="w-8 h-8"></i>
+      </button>
+
+      <button onclick="switchTab('properties')" id="mTab-properties" class="flex flex-col items-center py-1 text-slate-400 font-bold">
+        <i data-lucide="home" class="w-6 h-6"></i>
+        <span class="text-xs mt-1">المنشآت</span>
+      </button>
+
+      <button onclick="switchTab('settings')" id="mTab-settings" class="flex flex-col items-center py-1 text-slate-400 font-bold">
+        <i data-lucide="settings" class="w-6 h-6"></i>
+        <span class="text-xs mt-1">الإعدادات</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ================= MODAL: ADD / EDIT BOOKING ================= -->
+  <div id="bookingModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-3 md:p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl w-full max-w-2xl my-auto shadow-2xl border border-slate-100 overflow-hidden">
+      <!-- Modal Header -->
+      <div class="bg-emerald-800 text-white p-5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="calendar-plus" class="w-6 h-6 text-emerald-200"></i>
+          <h3 id="bookingModalTitle" class="text-xl font-black">إضافة حجز جديد</h3>
+        </div>
+        <button onclick="closeBookingModal()" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Booking Form -->
+      <form id="bookingForm" onsubmit="handleBookingSubmit(event)" class="p-6 space-y-5">
+        <input type="hidden" id="editBookingId">
+
+        <!-- 1. Customer Details -->
+        <div class="space-y-3">
+          <h4 class="text-sm font-extrabold text-emerald-800 uppercase tracking-wide">بيانات العميل</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-1">اسم العميل *</label>
+              <input type="text" id="customerName" required placeholder="مثال: أ / أحمد محمود" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:border-emerald-600 focus:bg-white outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-1">رقم الموبايل / واتساب *</label>
+              <input type="tel" id="customerPhone" required placeholder="010XXXXXXXX أو 05XXXXXXXX" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:border-emerald-600 focus:bg-white outline-none text-left" dir="ltr">
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Property & Duration -->
+        <div class="space-y-3 border-t border-slate-100 pt-4">
+          <h4 class="text-sm font-extrabold text-emerald-800 uppercase tracking-wide">المنشأة ونوع الحجز</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-1">اختر الشاليه / المنشأة *</label>
+              <select id="bookingPropertySelect" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:border-emerald-600 outline-none">
+                <!-- Dynamically filled with properties -->
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-1">مدة الإيجار *</label>
+              <select id="bookingDurationType" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:border-emerald-600 outline-none">
+                <option value="FULL_DAY">يوم كامل (مبيت)</option>
+                <option value="HALF_DAY_MORNING">نصف يوم (صباحي / داي يوز)</option>
+                <option value="HALF_DAY_EVENING">نصف يوم (مسائي / سهرة)</option>
+                <option value="HOURLY">ساعات محددة</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-1">تاريخ ووقت الدخول (الوصول) *</label>
+              <input type="datetime-local" id="checkInDate" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:border-emerald-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-1">تاريخ ووقت الخروج (المغادرة) *</label>
+              <input type="datetime-local" id="checkOutDate" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:border-emerald-600 outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Payments -->
+        <div class="space-y-3 border-t border-slate-100 pt-4 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
+          <h4 class="text-sm font-extrabold text-emerald-900 uppercase tracking-wide">الحسابات والمدفوعات</h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-1">المبلغ الإجمالي *</label>
+              <input type="number" id="totalAmount" required min="0" step="any" oninput="calculateRemainingBalance()" placeholder="0" class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 font-black text-slate-900 focus:border-emerald-600 outline-none text-lg">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-1">العربون المدفوع *</label>
+              <input type="number" id="depositAmount" required min="0" step="any" oninput="calculateRemainingBalance()" placeholder="0" class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 font-black text-emerald-700 focus:border-emerald-600 outline-none text-lg">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-1">المتبقي المطلوب</label>
+              <input type="number" id="remainingAmount" readonly class="w-full px-4 py-3 rounded-xl bg-rose-50 border border-rose-200 font-black text-rose-700 outline-none text-lg">
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Notes Section -->
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">ملاحظات خاصة على الحجز (اكتب أي تفاصيل)</label>
+          <textarea id="bookingNotes" rows="2" placeholder="مثال: طلب سرير إضافي، العائلة ستصل متأخرة، أو دفع كاش عند الباب..." class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:border-emerald-600 focus:bg-white outline-none"></textarea>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeBookingModal()" class="px-5 py-3 rounded-xl border border-slate-300 font-bold text-slate-600 hover:bg-slate-100 transition">
+            إلغاء
+          </button>
+          <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-8 py-3 rounded-xl shadow-lg shadow-emerald-700/30 transition text-base">
+            حفظ الحجز الآن
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ADD / EDIT PROPERTY ================= -->
+  <div id="propertyModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-3">
+    <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl p-6 border border-slate-100">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+        <h3 id="propertyModalTitle" class="text-lg font-black text-slate-800">إضافة منشأة جديدة</h3>
+        <button onclick="closePropertyModal()" class="text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="propertyForm" onsubmit="handlePropertySubmit(event)" class="space-y-4">
+        <input type="hidden" id="editPropertyId">
+
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">اسم الشاليه أو المنشأة *</label>
+          <input type="text" id="propName" required placeholder="مثال: شاليه اللؤلؤة على البحر" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:border-emerald-600 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">النوع *</label>
+          <select id="propType" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:border-emerald-600 outline-none">
+            <option value="شاليه">شاليه</option>
+            <option value="شقة">شقة مفروشة</option>
+            <option value="فيلا">فيلا خاصة</option>
+            <option value="استوديو">استوديو</option>
+            <option value="مزرعة">مزرعة أو استراحة</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">سعر الليلة التقديري</label>
+          <input type="number" id="propBasePrice" placeholder="0" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:border-emerald-600 outline-none">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-4">
+          <button type="button" onclick="closePropertyModal()" class="px-4 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-600 text-sm">
+            إلغاء
+          </button>
+          <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl transition text-sm">
+            حفظ المنشأة
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PRINTABLE RECEIPT TEMPLATE (FOR CLIENTS) -->
+  <div id="printableReceipt" class="hidden p-8 font-sans max-w-lg mx-auto bg-white text-slate-900 border-2 border-slate-800 rounded-2xl">
+    <div class="text-center pb-4 border-b-2 border-slate-800 mb-4">
+      <h2 class="text-2xl font-black">شاليه • Challé</h2>
+      <p class="text-sm font-bold">سند تأكيد حجز إقامة</p>
+    </div>
+    <div id="receiptDetails" class="space-y-2 text-base"></div>
+    <div class="text-center pt-6 text-xs text-slate-500 font-bold">
+      شكراً لتعاملكم معنا ونتمنى لكم إقامة سعيدة
+    </div>
+  </div>
+
+  <!-- Include App Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

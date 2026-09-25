@@ -1,32 +1,32 @@
 {
   "id": "io.challe.app",
-  "name": "Challé - شاليه",
+  "name": "Challé - إدارة الحجوزات والشاليهات",
   "short_name": "Challé",
-  "description": "نظام إدارة ومتابعة حجوزات الشاليهات والوحدات السكنية",
+  "description": "نظام إدارة الحجوزات والشاليهات والوحدات السكنية",
+  "lang": "ar",
+  "dir": "rtl",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "background_color": "#064e3b",
   "theme_color": "#059669",
-  "lang": "ar",
-  "dir": "rtl",
   "categories": ["business", "productivity"],
   "icons": [
     {
-      "src": "icon.svg",
+      "src": "/icon.svg",
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "apple-touch-icon.png",
+      "src": "/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon.svg",
+      "src": "/icon.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "maskable"

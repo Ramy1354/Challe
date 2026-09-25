@@ -36,34 +36,30 @@ const CURRENCIES = {
 
 // Duration Names in Arabic
 const DURATION_NAMES = {
-  FULL_DAY: 'يوم كامل (مبيت)',
-  HALF_DAY_MORNING: 'نصف يوم (صباحي)',
-  HALF_DAY_EVENING: 'نصف يوم (مسائي)',
+  FULL_DAY: 'يوم كامل',
+  HALF_DAY_MORNING: 'فترة صباحية',
+  HALF_DAY_EVENING: 'فترة مسائية',
   HOURLY: 'ساعات محددة'
 };
 
 // ================= INITIALIZATION =================
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize Lucide Icons
   if (window.lucide) lucide.createIcons();
 
-  // Register Service Worker for Mobile PWA
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 
-  // Load Saved Data
   loadDatabase();
-
-  // Check Login Session
   checkAutoLogin();
+  checkNotificationSupport();
 
-  // Setup Form Handlers
-  document.getElementById('loginForm').addEventListener('submit', handleLogin);
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) loginForm.addEventListener('submit', handleLogin);
 
-  // Real-time countdown refresh every minute
   setInterval(() => {
     updateUrgentAlerts();
+    dispatchUpcomingPushNotifications();
   }, 60000);
 });
 
@@ -81,7 +77,6 @@ function loadDatabase() {
   const savedBookings = localStorage.getItem(STORAGE_KEY_BOOKINGS);
   bookings = savedBookings ? JSON.parse(savedBookings) : [];
 
-  // Update Settings View inputs
   const currencySel = document.getElementById('currencySelector');
   if (currencySel) currencySel.value = settings.currency || 'EGP';
 
@@ -231,7 +226,6 @@ function renderBookings() {
 
   const now = new Date();
 
-  // Filter Bookings
   const filtered = bookings.filter(b => {
     const matchQuery = !query || b.customerName.toLowerCase().includes(query) || b.customerPhone.includes(query);
     const matchProp = (propFilter === 'ALL') || b.propertyId === propFilter;
@@ -246,7 +240,6 @@ function renderBookings() {
     return matchQuery && matchProp && matchStatus;
   });
 
-  // Sort upcoming first
   filtered.sort((a, b) => new Date(a.checkInDate) - new Date(b.checkInDate));
 
   if (filtered.length === 0) {
@@ -272,7 +265,6 @@ function renderBookings() {
     const inDate = new Date(b.checkInDate);
     const outDate = new Date(b.checkOutDate);
 
-    // Calculate Countdown
     const diffMs = inDate - now;
     const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
     let badgeClass = 'bg-blue-50 text-blue-800 border-blue-200';
@@ -294,7 +286,6 @@ function renderBookings() {
 
     return `
       <div class="bg-white rounded-3xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-md transition space-y-4">
-        <!-- Top Bar: Property & Status -->
         <div class="flex items-center justify-between flex-wrap gap-2">
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full ${now >= inDate && now <= outDate ? 'bg-emerald-500 ring-4 ring-emerald-100' : 'bg-slate-300'}"></span>
@@ -306,7 +297,6 @@ function renderBookings() {
           </span>
         </div>
 
-        <!-- Middle: Customer & Dates -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
           <div>
             <p class="text-xs text-slate-500 font-bold mb-1">بيانات العميل</p>
@@ -331,7 +321,6 @@ function renderBookings() {
           </div>
         </div>
 
-        <!-- Financial Breakdown -->
         <div class="grid grid-cols-3 gap-2 text-center bg-emerald-50/60 p-3 rounded-2xl border border-emerald-100">
           <div>
             <p class="text-xs font-bold text-slate-500">الإجمالي</p>
@@ -347,23 +336,26 @@ function renderBookings() {
           </div>
         </div>
 
-        <!-- Notes if any -->
-        ${b.notes ? `
-          <div class="bg-amber-50/70 p-3 rounded-xl border border-amber-200/70 text-sm font-bold text-amber-900 flex items-start gap-2">
-            <i data-lucide="message-square" class="w-4 h-4 text-amber-700 mt-0.5 shrink-0"></i>
-            <span>ملاحظة: ${b.notes}</span>
+        ${b.furnitureStatus ? `
+          <div class="bg-amber-100/70 p-3 rounded-2xl border border-amber-300 text-sm font-extrabold text-amber-950 flex items-center gap-2">
+            <i data-lucide="sofa" class="w-4 h-4 text-amber-800 shrink-0"></i>
+            <span>حالة العفش: ${b.furnitureStatus}</span>
           </div>
         ` : ''}
 
-        <!-- Actions Bar -->
+        ${b.notes ? `
+          <div class="bg-slate-100 p-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 flex items-start gap-2">
+            <i data-lucide="message-square" class="w-4 h-4 text-slate-500 mt-0.5 shrink-0"></i>
+            <span>ملاحظات: ${b.notes}</span>
+          </div>
+        ` : ''}
+
         <div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-100">
-          <!-- WhatsApp Quick Confirm -->
           <button onclick="sendWhatsAppReceipt('${b.id}')" class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-4 py-2.5 rounded-xl shadow-sm transition text-sm">
             <i data-lucide="message-circle" class="w-4 h-4"></i>
             <span>واتساب العميل</span>
           </button>
 
-          <!-- Edit & Delete -->
           <div class="flex items-center gap-2">
             <button onclick="printReceipt('${b.id}')" class="p-2.5 text-slate-500 hover:text-slate-800 bg-slate-100 rounded-xl transition" title="طباعة سند">
               <i data-lucide="printer" class="w-4 h-4"></i>
@@ -383,7 +375,6 @@ function renderBookings() {
   if (window.lucide) lucide.createIcons();
 }
 
-// Calculate remaining balance dynamically
 function calculateRemainingBalance() {
   const tot = parseFloat(document.getElementById('totalAmount').value) || 0;
   const dep = parseFloat(document.getElementById('depositAmount').value) || 0;
@@ -391,7 +382,11 @@ function calculateRemainingBalance() {
   document.getElementById('remainingAmount').value = rem;
 }
 
-// Modal Handlers
+function setFurnitureQuickText(text) {
+  const el = document.getElementById('furnitureStatus');
+  if (el) el.value = text;
+}
+
 function openBookingModal(editId = null) {
   const modal = document.getElementById('bookingModal');
   const title = document.getElementById('bookingModalTitle');
@@ -414,12 +409,12 @@ function openBookingModal(editId = null) {
     document.getElementById('totalAmount').value = item.totalAmount;
     document.getElementById('depositAmount').value = item.depositAmount;
     document.getElementById('remainingAmount').value = item.remainingAmount;
+    document.getElementById('furnitureStatus').value = item.furnitureStatus || '';
     document.getElementById('bookingNotes').value = item.notes || '';
   } else {
     title.textContent = 'إضافة حجز جديد';
     document.getElementById('editBookingId').value = '';
     
-    // Default check-in tomorrow 2:00 PM, check-out after tomorrow 12:00 PM
     const now = new Date();
     now.setDate(now.getDate() + 1);
     now.setHours(14, 0, 0, 0);
@@ -428,6 +423,7 @@ function openBookingModal(editId = null) {
     now.setDate(now.getDate() + 1);
     now.setHours(12, 0, 0, 0);
     document.getElementById('checkOutDate').value = now.toISOString().slice(0, 16);
+    document.getElementById('furnitureStatus').value = '';
   }
 
   modal.classList.remove('hidden');
@@ -457,6 +453,7 @@ function handleBookingSubmit(e) {
     totalAmount: total,
     depositAmount: deposit,
     remainingAmount: Math.max(0, total - deposit),
+    furnitureStatus: (document.getElementById('furnitureStatus').value || '').trim(),
     notes: document.getElementById('bookingNotes').value.trim()
   };
 
@@ -607,7 +604,6 @@ function updateUrgentAlerts() {
   const box = document.getElementById('urgentAlertsBox');
   const now = new Date();
   
-  // Find reservations arriving in <= 48 hours
   const urgent = bookings.filter(b => {
     const inDate = new Date(b.checkInDate);
     const diffHours = (inDate - now) / (1000 * 60 * 60);
@@ -663,15 +659,21 @@ function sendWhatsAppReceipt(bookingId) {
   const outDate = new Date(b.checkOutDate).toLocaleString('ar-EG');
 
   let phone = b.customerPhone.replace(/[^0-9]/g, '');
-  if (phone.startsWith('01') && phone.length === 11) phone = '2' + phone; // Egypt
-  if (phone.startsWith('05') && phone.length === 10) phone = '966' + phone.substring(1); // Saudi
+  if (phone.startsWith('01') && phone.length === 11) phone = '2' + phone;
+  if (phone.startsWith('05') && phone.length === 10) phone = '966' + phone.substring(1);
 
-  const msg = `مرحباً أستاذ ${b.customerName}،\nتم تأكيد حجزكم في (${prop.name}) بنجاح ✨\n\n📌 المواعيد:\n- موعد الدخول: ${inDate}\n- موعد الخروج: ${outDate}\n\n💰 الحسابات:\n- إجمالي المبلغ: ${formatMoney(b.totalAmount)}\n- العربون المدفوع: ${formatMoney(b.depositAmount)}\n- المتبقي عند الوصول: ${formatMoney(b.remainingAmount)}\n\nنتمنى لكم إقامة طيبة وسعيدة دائماً!`;
+  let msg = `مرحباً أستاذ ${b.customerName}،\nتم تأكيد حجزكم في (${prop.name}) بنجاح ✨\n\n📌 المواعيد:\n- موعد الدخول: ${inDate}\n- موعد الخروج: ${outDate}\n\n💰 الحسابات:\n- إجمالي المبلغ: ${formatMoney(b.totalAmount)}\n- العربون المدفوع: ${formatMoney(b.depositAmount)}\n- المتبقي عند الوصول: ${formatMoney(b.remainingAmount)}`;
+
+  if (b.furnitureStatus) {
+    msg += `\n\n🛋️ حالة العفش والتسليم:\n${b.furnitureStatus}`;
+  }
+
+  msg += `\n\nنتمنى لكم إقامة طيبة وسعيدة دائماً! 🌿`;
 
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
-// ================= EMAIL BACKUP CENTER =================
+// ================= BACKUP CENTER =================
 function triggerEmailBackup() {
   const recipient = settings.backupEmail || 'father@example.com';
   const now = new Date().toLocaleDateString('ar-EG');
@@ -688,12 +690,38 @@ function triggerEmailBackup() {
     body += `   المنشأة: ${prop.name}\n`;
     body += `   الدخول: ${b.checkInDate} | الخروج: ${b.checkOutDate}\n`;
     body += `   الإجمالي: ${formatMoney(b.totalAmount)} | العربون: ${formatMoney(b.depositAmount)} | المتبقي: ${formatMoney(b.remainingAmount)}\n`;
+    if (b.furnitureStatus) body += `   حالة العفش: ${b.furnitureStatus}\n`;
     if (b.notes) body += `   ملاحظة: ${b.notes}\n`;
     body += `-----------------------------------------\n`;
   });
 
   const mailtoLink = `mailto:${recipient}?subject=${encodeURIComponent(`نسخة احتياطية لحجوزات شاليه (${now})`)}&body=${encodeURIComponent(body)}`;
   window.location.href = mailtoLink;
+}
+
+function triggerWhatsAppSelfBackup() {
+  if (bookings.length === 0) {
+    alert('لا توجد حجوزات مسجلة حالياً لنسخها.');
+    return;
+  }
+
+  const now = new Date().toLocaleDateString('ar-EG');
+  let msg = `📌 *نسخة احتياطية لحجوزات Challé (${now})*\n`;
+  msg += `----------------------------------------\n`;
+  msg += `📊 إجمالي الحجوزات: ${bookings.length}\n\n`;
+
+  bookings.forEach((b, i) => {
+    const prop = properties.find(p => p.id === b.propertyId) || { name: 'منشأة' };
+    msg += `*${i + 1}) ${b.customerName}* (${b.customerPhone})\n`;
+    msg += `🏠 المنشأة: ${prop.name}\n`;
+    msg += `📅 الدخول: ${b.checkInDate.replace('T', ' ')}\n`;
+    msg += `💵 الإجمالي: ${formatMoney(b.totalAmount)} | العربون: ${formatMoney(b.depositAmount)} | المتبقي: ${formatMoney(b.remainingAmount)}\n`;
+    if (b.furnitureStatus) msg += `🛋️ العفش: ${b.furnitureStatus}\n`;
+    if (b.notes) msg += `📝 ملاحظة: ${b.notes}\n`;
+    msg += `----------------------------------------\n`;
+  });
+
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 function exportDatabaseJSON() {
@@ -754,8 +782,74 @@ function printReceipt(bookingId) {
     <p><strong>إجمالي المبلغ:</strong> ${formatMoney(b.totalAmount)}</p>
     <p><strong>العربون المدفوع:</strong> ${formatMoney(b.depositAmount)}</p>
     <p><strong>المبلغ المتبقي للتحصيل:</strong> ${formatMoney(b.remainingAmount)}</p>
+    ${b.furnitureStatus ? `<p><strong>حالة العفش:</strong> ${b.furnitureStatus}</p>` : ''}
     ${b.notes ? `<p><strong>ملاحظات:</strong> ${b.notes}</p>` : ''}
   `;
 
   window.print();
+}
+
+// ================= REAL PHONE NOTIFICATIONS =================
+function checkNotificationSupport() {
+  if (!('Notification' in window)) {
+    const btn = document.getElementById('btnEnableNotifs');
+    if (btn) btn.style.display = 'none';
+    return;
+  }
+
+  const statusText = document.getElementById('notifStatusText');
+  const btn = document.getElementById('btnEnableNotifs');
+
+  if (Notification.permission === 'granted') {
+    if (statusText) statusText.textContent = 'الإشعارات مفعلة وتعمل بنجاح على هذا الجهاز ✅';
+    if (btn) {
+      btn.textContent = 'مفعلة بالفعل';
+      btn.classList.replace('bg-amber-600', 'bg-slate-300');
+      btn.classList.replace('text-white', 'text-slate-700');
+      btn.disabled = true;
+    }
+    dispatchUpcomingPushNotifications();
+  }
+}
+
+function requestNotificationPermission() {
+  if (!('Notification' in window)) {
+    alert('متصفح هذا الجهاز لا يدعم الإشعارات المباشرة.');
+    return;
+  }
+
+  Notification.requestPermission().then((permission) => {
+    if (permission === 'granted') {
+      new Notification('Challé • شاليه', {
+        body: 'تم تفعيل التنبيهات بنجاح! سيتم تنبيهك عند اقتراب مواعيد الحجوزات.',
+        icon: 'icon.svg'
+      });
+      checkNotificationSupport();
+    }
+  });
+}
+
+function dispatchUpcomingPushNotifications() {
+  if (Notification.permission !== 'granted') return;
+
+  const now = new Date();
+  bookings.forEach(b => {
+    const inDate = new Date(b.checkInDate);
+    const diffHours = (inDate - now) / (1000 * 60 * 60);
+
+    if (diffHours > 0 && diffHours <= 24) {
+      const prop = properties.find(p => p.id === b.propertyId) || { name: 'شاليه' };
+      if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.showNotification(`وصول عميل اليوم! ⏳`, {
+            body: `العميل: ${b.customerName} - المنشأة: ${prop.name}\nالمتبقي تحصيله: ${formatMoney(b.remainingAmount)}`,
+            icon: 'icon.svg',
+            badge: 'icon.svg',
+            vibrate: [200, 100, 200],
+            tag: `checkin-${b.id}`
+          });
+        });
+      }
+    }
+  });
 }

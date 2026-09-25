@@ -1,8 +1,10 @@
-const CACHE_NAME = 'challe-v1';
+const CACHE_NAME = 'challe-v2';
 const ASSETS = [
+  './',
   './index.html',
   './app.js',
-  './manifest.json'
+  './manifest.json',
+  './icon.svg'
 ];
 
 self.addEventListener('install', (e) => {
@@ -24,5 +26,16 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request).then((res) => res || fetch(e.request))
+  );
+});
+
+// Listen for notifications
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      if (clientList.length > 0) return clientList[0].focus();
+      return clients.openWindow('./');
+    })
   );
 });

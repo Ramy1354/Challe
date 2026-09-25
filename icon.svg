@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="chaletGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+  </defs>
+  <!-- Background rounded squircle -->
+  <rect width="512" height="512" rx="115" fill="url(#chaletGrad)"/>
+  
+  <!-- Modern Chalet / Villa Icon -->
+  <g fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Chalet Roof -->
+    <path d="M120 280 L256 140 L392 280" />
+    <!-- Chalet Body -->
+    <path d="M160 280 V390 H352 V280" />
+    <!-- Door -->
+    <path d="M226 390 V310 H286 V390" fill="#047857" />
+  </g>
+  
+  <!-- Warm Sun / Luxury Accent -->
+  <circle cx="360" cy="150" r="28" fill="#fbbf24"/>
+  <circle cx="360" cy="150" r="38" stroke="#fbbf24" stroke-width="4" stroke-opacity="0.4" fill="none"/>
+</svg>

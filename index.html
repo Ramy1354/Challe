@@ -11,6 +11,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Challé">
 
+  <!-- Favicon & Touch Icon -->
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
   <!-- Tailwind CSS & Cairo Font -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,7 +30,7 @@
     }
     input, textarea, select {
       user-select: text;
-      font-size: 16px !important; /* Prevents auto-zoom on iOS */
+      font-size: 16px !important;
     }
     @media print {
       body * { visibility: hidden; }
@@ -196,9 +200,7 @@
         </div>
 
         <!-- Bookings Cards Container -->
-        <div id="bookingsList" class="space-y-4">
-          <!-- Populated by JavaScript -->
-        </div>
+        <div id="bookingsList" class="space-y-4"></div>
       </section>
 
       <!-- TAB 2: PROPERTIES CONFIGURATION -->
@@ -214,14 +216,11 @@
           </button>
         </div>
 
-        <div id="propertiesGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <!-- Rendered by JavaScript -->
-        </div>
+        <div id="propertiesGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
       </section>
 
       <!-- TAB 3: SETTINGS & BACKUP -->
       <section id="tabContent-settings" class="hidden space-y-6">
-        <!-- Currency & Email Backup Config Card -->
         <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
           <div class="flex items-center gap-3 pb-4 border-b border-slate-100">
             <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
@@ -263,7 +262,6 @@
             </div>
           </div>
 
-          <!-- Instant Backup Center -->
           <div class="bg-emerald-50 rounded-2xl p-5 border border-emerald-200 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
               <div class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
@@ -287,7 +285,6 @@
             </div>
           </div>
 
-          <!-- Restore Backup Option -->
           <div class="border-t border-slate-200 pt-4 flex items-center justify-between">
             <div>
               <p class="font-bold text-slate-700">استعادة نسخة احتياطية سابقة</p>
@@ -300,7 +297,6 @@
           </div>
         </div>
 
-        <!-- Change Credentials Card -->
         <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
           <h3 class="text-xl font-black text-slate-800 pb-2 border-b border-slate-100">تغيير اسم المستخدم أو الرقم السري</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -327,7 +323,6 @@
         <span class="text-xs mt-1">الحجوزات</span>
       </button>
 
-      <!-- Center Floating Plus Button -->
       <button onclick="openBookingModal()" class="w-14 h-14 -mt-7 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-emerald-700/40 active:scale-95 transition">
         <i data-lucide="plus" class="w-8 h-8"></i>
       </button>
@@ -383,9 +378,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label class="block text-sm font-bold text-slate-700 mb-1">اختر الشاليه / المنشأة *</label>
-              <select id="bookingPropertySelect" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:border-emerald-600 outline-none">
-                <!-- Dynamically filled with properties -->
-              </select>
+              <select id="bookingPropertySelect" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:border-emerald-600 outline-none"></select>
             </div>
             <div>
               <label class="block text-sm font-bold text-slate-700 mb-1">مدة الإيجار *</label>
@@ -429,10 +422,34 @@
           </div>
         </div>
 
-        <!-- 4. Notes Section -->
+        <!-- 4. NEW: Furniture & Handover Status -->
+        <div class="space-y-2 border-t border-slate-100 pt-4 bg-amber-50/60 p-4 rounded-2xl border border-amber-200/80">
+          <div class="flex items-center gap-2">
+            <i data-lucide="sofa" class="w-5 h-5 text-amber-700"></i>
+            <label class="text-sm font-extrabold text-amber-950">حالة العفش والتسليم (توصل للعميل في الرسالة)</label>
+          </div>
+          
+          <!-- One-tap Quick Fill Buttons -->
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button type="button" onclick="setFurnitureQuickText('تم تسليم العفش بحالة ممتازة')" class="text-xs font-bold px-3 py-1.5 bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 rounded-xl transition">
+              📦 تم تسليم العفش بحالة ممتازة
+            </button>
+            <button type="button" onclick="setFurnitureQuickText('تم استلام العفش سليم بالكامل')" class="text-xs font-bold px-3 py-1.5 bg-white border border-emerald-300 hover:bg-emerald-100 text-emerald-900 rounded-xl transition">
+              ✅ تم استلام العفش سليم بالكامل
+            </button>
+            <button type="button" onclick="setFurnitureQuickText('')" class="text-xs font-bold px-2.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-600 rounded-xl transition">
+              مسح
+            </button>
+          </div>
+
+          <!-- Manual Writing Input -->
+          <input type="text" id="furnitureStatus" placeholder="أو اكتب هنا يدوياً (مثال: تم فحص التكييفات والفرش سليم...)" class="w-full mt-2 px-4 py-3 rounded-xl bg-white border border-amber-300 font-bold text-slate-800 focus:border-amber-600 outline-none">
+        </div>
+
+        <!-- 5. General Notes -->
         <div>
-          <label class="block text-sm font-bold text-slate-700 mb-1">ملاحظات خاصة على الحجز (اكتب أي تفاصيل)</label>
-          <textarea id="bookingNotes" rows="2" placeholder="مثال: طلب سرير إضافي، العائلة ستصل متأخرة، أو دفع كاش عند الباب..." class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:border-emerald-600 focus:bg-white outline-none"></textarea>
+          <label class="block text-sm font-bold text-slate-700 mb-1">ملاحظات عامة أخرى (خاصة بك)</label>
+          <textarea id="bookingNotes" rows="2" placeholder="أي تفاصيل خاصة بك أنت فقط..." class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-slate-800 focus:border-emerald-600 focus:bg-white outline-none"></textarea>
         </div>
 
         <!-- Action Buttons -->
@@ -506,7 +523,6 @@
     </div>
   </div>
 
-  <!-- Include App Logic -->
   <script src="app.js"></script>
 </body>
 </html>

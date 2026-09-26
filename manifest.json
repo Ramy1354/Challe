@@ -97,28 +97,42 @@
     }
   ],
   "screenshots": [
-    {
-      "src": "/screenshots/home-narrow.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "الصفحة الرئيسية"
-    },
-    {
-      "src": "/screenshots/bookings-narrow.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "قائمة الحجوزات"
-    },
-    {
-      "src": "/screenshots/home-wide.png",
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "الصفحة الرئيسية"
-    }
-  ],
+  {
+    "src": "/screenshots/home-wide.png",
+    "sizes": "1284x792",
+    "type": "image/png",
+    "form_factor": "wide",
+    "label": "الصفحة الرئيسية"
+  },
+  {
+    "src": "/screenshots/facilities-wide.png",
+    "sizes": "1693x884",
+    "type": "image/png",
+    "form_factor": "wide",
+    "label": "الشاليهات والمرافق"
+  },
+  {
+    "src": "/screenshots/facilities-list-wide.png",
+    "sizes": "1197x488",
+    "type": "image/png",
+    "form_factor": "wide",
+    "label": "قائمة المرافق"
+  },
+  {
+    "src": "/screenshots/booking-narrow.png",
+    "sizes": "656x925",
+    "type": "image/png",
+    "form_factor": "narrow",
+    "label": "حجز جديد"
+  },
+  {
+    "src": "/screenshots/add-facility.png",
+    "sizes": "429x422",
+    "type": "image/png",
+    "form_factor": "narrow",
+    "label": "إضافة منشأة"
+  }
+],
   "shortcuts": [
     {
       "name": "حجز جديد",

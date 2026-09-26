@@ -36,56 +36,5 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/home-narrow.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "الصفحة الرئيسية"
-    },
-    {
-      "src": "/screenshots/bookings-narrow.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "قائمة الحجوزات"
-    },
-    {
-      "src": "/screenshots/home-wide.png",
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "الصفحة الرئيسية"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "حجز جديد",
-      "short_name": "حجز",
-      "description": "إنشاء حجز جديد",
-      "url": "/?source=pwa&view=new-booking",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "حجوزات اليوم",
-      "short_name": "اليوم",
-      "description": "عرض حجوزات اليوم",
-      "url": "/?source=pwa&view=today",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    }
   ]
 }

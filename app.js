@@ -674,70 +674,65 @@ function sendWhatsAppReceipt(bookingId) {
 }
 
 // ================= BACKUP CENTER =================
-function triggerEmailBackup() {
-  const recipient = settings.backupEmail || 'father@example.com';
-  const now = new Date().toLocaleDateString('ar-EG');
-
-  let body = `تقرير نسخة احتياطية لحجوزات Challé (${now})\n`;
-  body += `=========================================\n\n`;
-  body += `إجمالي عدد الحجوزات: ${bookings.length}\n`;
-  body += `إجمالي عدد المنشآت: ${properties.length}\n\n`;
-  body += `تفاصيل الحجوزات:\n`;
-
-  bookings.forEach((b, i) => {
-    const prop = properties.find(p => p.id === b.propertyId) || { name: 'منشأة' };
-    body += `${i + 1}) العميل: ${b.customerName} (${b.customerPhone})\n`;
-    body += `   المنشأة: ${prop.name}\n`;
-    body += `   الدخول: ${b.checkInDate} | الخروج: ${b.checkOutDate}\n`;
-    body += `   الإجمالي: ${formatMoney(b.totalAmount)} | العربون: ${formatMoney(b.depositAmount)} | المتبقي: ${formatMoney(b.remainingAmount)}\n`;
-    if (b.furnitureStatus) body += `   حالة العفش: ${b.furnitureStatus}\n`;
-    if (b.notes) body += `   ملاحظة: ${b.notes}\n`;
-    body += `-----------------------------------------\n`;
-  });
-
-  const mailtoLink = `mailto:${recipient}?subject=${encodeURIComponent(`نسخة احتياطية لحجوزات شاليه (${now})`)}&body=${encodeURIComponent(body)}`;
-  window.location.href = mailtoLink;
-}
-
-function triggerWhatsAppSelfBackup() {
-  if (bookings.length === 0) {
-    alert('لا توجد حجوزات مسجلة حالياً لنسخها.');
-    return;
-  }
-
-  const now = new Date().toLocaleDateString('ar-EG');
-  let msg = `📌 *نسخة احتياطية لحجوزات Challé (${now})*\n`;
-  msg += `----------------------------------------\n`;
-  msg += `📊 إجمالي الحجوزات: ${bookings.length}\n\n`;
-
-  bookings.forEach((b, i) => {
-    const prop = properties.find(p => p.id === b.propertyId) || { name: 'منشأة' };
-    msg += `*${i + 1}) ${b.customerName}* (${b.customerPhone})\n`;
-    msg += `🏠 المنشأة: ${prop.name}\n`;
-    msg += `📅 الدخول: ${b.checkInDate.replace('T', ' ')}\n`;
-    msg += `💵 الإجمالي: ${formatMoney(b.totalAmount)} | العربون: ${formatMoney(b.depositAmount)} | المتبقي: ${formatMoney(b.remainingAmount)}\n`;
-    if (b.furnitureStatus) msg += `🛋️ العفش: ${b.furnitureStatus}\n`;
-    if (b.notes) msg += `📝 ملاحظة: ${b.notes}\n`;
-    msg += `----------------------------------------\n`;
-  });
-
-  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-}
-
-function exportDatabaseJSON() {
+function buildBackupFile() {
+  const stamp = new Date().toISOString().slice(0, 10);
   const payload = {
     settings,
     properties,
     bookings,
     exportedAt: new Date().toISOString()
   };
-  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(payload, null, 2));
-  const dl = document.createElement('a');
-  dl.setAttribute('href', dataStr);
-  dl.setAttribute('download', `challe_backup_${new Date().toISOString().slice(0, 10)}.json`);
-  document.body.appendChild(dl);
-  dl.click();
-  dl.remove();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  return new File([blob], `challe_backup_${stamp}.json`, { type: 'application/json' });
+}
+
+function downloadBackupFile(file) {
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function shareBackupFile() {
+  if (!properties.length && !bookings.length) {
+    alert('لا توجد بيانات مسجلة حالياً لنسخها.');
+    return;
+  }
+
+  const file = buildBackupFile();
+  const text = 'نسخة احتياطية لحجوزات Challé. احفظ الملف، ويمكن استعادته من زر استعادة النسخة.';
+
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: 'نسخة Challé', text });
+      return;
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+    }
+  }
+
+  downloadBackupFile(file);
+  alert('تم حفظ ملف النسخة على الجهاز. أرسل هذا الملف لواتساب أو الإيميل، ثم استخدم استعادة النسخة على الهاتف الآخر.');
+}
+
+function triggerEmailBackup() {
+  shareBackupFile();
+}
+
+function triggerWhatsAppSelfBackup() {
+  shareBackupFile();
+}
+
+function exportDatabaseJSON() {
+  if (!properties.length && !bookings.length) {
+    alert('لا توجد بيانات مسجلة حالياً لنسخها.');
+    return;
+  }
+  downloadBackupFile(buildBackupFile());
 }
 
 function restoreDatabase(e) {
@@ -761,6 +756,7 @@ function restoreDatabase(e) {
     } catch (err) {
       alert('حدث خطأ أثناء قراءة ملف النسخة');
     }
+    e.target.value = '';
   };
   reader.readAsText(file);
 }
